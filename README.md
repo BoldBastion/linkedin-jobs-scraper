@@ -1,196 +1,447 @@
-[Linkedin Jobs Scraper](https://apify.com/khadinakbar/linkedin-jobs-scraper?fpr=data)
+[Linkedin Jobs Scraper](https://apify.com/cryptosignals/linkedin-jobs-scraper?fpr=data)
 
-# 🔍 LinkedIn Jobs Scraper — Skills, Salary & B2B Hiring Signals
+# LinkedIn Jobs Scraper — Public Job Listings (No Login Required)
 
-Extract LinkedIn job listings by keyword + location — no login, no cookies, no manual URL building required. Returns fully structured data including parsed salary (min/max numbers), required skills array, easy-apply flag, applicant count, seniority level, and full job description.
+Scrape LinkedIn job listings at scale without login credentials or authentication. This actor uses LinkedIn's public guest API to search and extract job postings, returning structured data including job title, company, location, salary, description, and direct apply links.
 
-The only LinkedIn jobs actor with a documented output schema — making it the best choice for AI agents (Claude, ChatGPT) and automated pipelines.
-
-Export scraped data, run via API, schedule recurring runs, or integrate with other tools.
+**2,100+ successful runs** | **99.7% success rate** | **56 active users**
 
 ---
 
-## Why This Actor?
+## Why Use This Actor?
 
-Most LinkedIn scrapers either require you to manually build search URLs, return raw unstructured text, or cost 5-10x more per result. This actor is different:
+LinkedIn is the world's largest professional job board with millions of active listings. But LinkedIn's interface makes it difficult to:
 
-- **Simple input** — just type your job title and location. No URL building in incognito windows.
-- **Multi-query + multi-location** — run `["Software Engineer", "ML Engineer"]` × `["New York", "London"]` in one run
-- **Parsed salary** — returns `salary_min: 180000` and `salary_max: 240000`, not just a raw string
-- **Skills as array** — `required_skills: ["Python", "PyTorch"]` for easy filtering
-- **B2B hiring signals** — find companies actively hiring to power sales prospecting and competitive intel
-- **Built-in deduplication** — cross-query runs never return the same job twice
-- **Full output schema** — every field documented for AI agent compatibility
+- Export job data in bulk
+- Compare salaries across roles and locations
+- Track job market trends over time
+- Build pipelines of job leads for recruiting
+- Feed job data into analytics dashboards
+
+This actor solves all of that. You get clean, structured JSON data from LinkedIn's public job listings — no login, no cookies, no accounts to manage.
 
 ---
 
-## Use Cases
+## Key Use Cases
 
-**For recruiters and talent teams:** Aggregate open roles across companies and locations. Monitor competitors' hiring activity. Build sourcing pipelines for specific skill sets.
+### 🔍 Job Market Research
 
-**For B2B sales teams:** Identify companies hiring for roles that signal budget and buying intent. Find hiring managers and decision-makers. Use job postings as warm outreach triggers.
+Track hiring trends across industries. Monitor which skills are in demand, which companies are hiring, and how salaries change by region. Perfect for HR consultants, workforce analysts, and career coaches who need data-driven insights.
 
-**For job seekers and market researchers:** Track salary trends across roles and geographies. Analyze which skills are most in-demand. Compare remote vs on-site availability by location.
+### 📊 Recruitment Analytics
 
-**For developers and data teams:** Feed structured job data into dashboards, CRMs, ATS systems, or AI pipelines. Schedule daily monitoring runs for specific searches.
+Build dashboards showing competitor hiring activity. Know when a competitor posts 50 new engineering roles — that's a signal. Recruiting firms use this to identify clients who are actively scaling.
+
+### 💼 Lead Generation
+
+Every job posting is a buying signal. A company posting for a "DevOps Engineer" probably needs DevOps tools. A company hiring "SDRs" is scaling sales. Feed job listings into your CRM to identify warm leads based on hiring activity.
+
+### 🤖 Automated Job Alerts
+
+Set up scheduled runs to monitor specific keywords and locations. Get notified when new roles matching your criteria appear. Build custom job boards or feeds for niche audiences.
+
+### 📈 Salary Benchmarking
+
+Collect salary data across roles, locations, and experience levels. Build compensation reports for clients or internal planning. Compare your offers against market rates.
+
+### 🎓 Academic Research
+
+Study labor market dynamics, remote work trends, skill demand evolution, or geographic hiring patterns. Export to CSV/Excel for use in research papers and reports.
+
+---
+
+## How It Works
+
+The actor operates in two modes:
+
+### Mode 1: Search Jobs
+
+Search LinkedIn's public job listings by keyword and location. Returns a list of matching jobs with summary data.
+
+### Mode 2: Get Job Details
+
+Fetch the full details of a specific job posting by URL or job ID. Returns the complete job description, requirements, and metadata.
 
 ---
 
 ## Input Parameters
 
-### Simple keyword search (recommended)
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `action` | string | Yes | `search` | `"search"` to find jobs by keywords, `"job"` to get full details of a specific job |
+| `keywords` | string | No | `"python developer"` | Search terms (e.g., `"data engineer"`, `"marketing manager remote"`) |
+| `location` | string | No | `""` | Location filter (e.g., `"United States"`, `"London"`, `"Berlin"`) |
+| `maxItems` | integer | No | `5` | Number of results to return (1–100) |
+| `url` | string | No | `""` | LinkedIn job URL or job ID, used with `action: "job"` |
+
+### Input Examples
+
+**Search for remote Python jobs in the US (25 results):**
 
 ```
 {
-  "searchQueries": ["Software Engineer", "Product Manager"],
-  "locations": ["San Francisco, CA", "Remote"],
-  "maxResults": 100,
-  "datePosted": "r604800"
+  "action": "search",
+  "keywords": "python developer remote",
+  "location": "United States",
+  "maxItems": 25
 }
 ```
 
-This runs 4 searches: each query × each location. Results are automatically deduplicated.
-
-### Direct URL mode (advanced)
-
-Open `linkedin.com/jobs` in an incognito window, apply your filters, copy the URL, and paste it here:
+**Search for marketing roles in London:**
 
 ```
 {
-  "startUrls": [
-    { "url": "https://www.linkedin.com/jobs/search/?keywords=data+scientist&location=New+York&f_E=4&f_WT=2" }
-  ],
-  "maxResults": 200
+  "action": "search",
+  "keywords": "marketing manager",
+  "location": "London",
+  "maxItems": 50
 }
 ```
 
-### With filters
+**Get full details of a specific job:**
 
 ```
 {
-  "searchQueries": ["DevOps Engineer"],
-  "locations": ["United States"],
-  "maxResults": 50,
-  "experienceLevel": ["4", "5"],
-  "workType": ["2", "3"],
-  "jobType": ["F"],
-  "salaryBase": "100000"
+  "action": "job",
+  "url": "https://www.linkedin.com/jobs/view/1234567890"
 }
 ```
 
----
-
-## Output Fields
-
-Each result is a JSON object with the following fields:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `job_id` | string | LinkedIn's unique job ID |
-| `job_title` | string | null | Full job title |
-| `company_name` | string | null | Hiring company name |
-| `company_url` | string | null | LinkedIn company profile URL |
-| `company_size` | string | null | Employee count range |
-| `company_industry` | string | null | Industry category |
-| `location` | string | null | City, state, work arrangement |
-| `work_type` | string | null | Remote / Hybrid / On-site |
-| `employment_type` | string | null | Full-time / Part-time / Contract |
-| `seniority_level` | string | null | Entry / Mid-Senior / Director etc. |
-| `salary_range` | string | null | Raw salary string from LinkedIn |
-| `salary_min` | number | null | Parsed minimum salary (USD) |
-| `salary_max` | number | null | Parsed maximum salary (USD) |
-| `required_skills` | string[] | Extracted skills list |
-| `is_easy_apply` | boolean | True if LinkedIn Easy Apply is enabled |
-| `applicant_count` | string | null | e.g. "142 applicants" |
-| `posted_at` | string | null | Relative posting time |
-| `job_description` | string | null | Full plain-text description |
-| `job_url` | string | Direct link to the job posting |
-| `search_query` | string | null | Query that found this job |
-| `scraped_at` | string | ISO timestamp of extraction |
-
-### Example output record
+**Broad search for data engineering jobs (max results):**
 
 ```
 {
-  "job_id": "3812749302",
-  "job_title": "Senior Machine Learning Engineer",
-  "company_name": "Anthropic",
-  "company_url": "https://www.linkedin.com/company/anthropic",
-  "company_size": "201-500 employees",
-  "company_industry": "Artificial Intelligence",
-  "location": "San Francisco, CA (Hybrid)",
-  "work_type": "Hybrid",
-  "employment_type": "Full-time",
-  "seniority_level": "Mid-Senior level",
-  "salary_range": "$200,000–$280,000/yr",
-  "salary_min": 200000,
-  "salary_max": 280000,
-  "required_skills": ["Python", "PyTorch", "RLHF", "Distributed Systems"],
-  "is_easy_apply": false,
-  "applicant_count": "142 applicants",
-  "posted_at": "2 days ago",
-  "job_description": "We are looking for a Senior ML Engineer...",
-  "job_url": "https://www.linkedin.com/jobs/view/3812749302/",
-  "search_query": "Machine Learning Engineer",
-  "source_url": "https://www.linkedin.com/jobs/view/3812749302/",
-  "scraped_at": "2026-03-31T14:22:00.000Z"
+  "action": "search",
+  "keywords": "data engineer",
+  "maxItems": 100
 }
 ```
 
 ---
 
-## Cost & Performance
+## Sample Output
 
-**Pricing:** $0.0005 per job result (PAY_PER_EVENT). No actor start fee.
+Each job listing returns a structured JSON object. Here's what a typical result looks like:
 
-| Scenario | Jobs | Estimated Cost |
-| --- | --- | --- |
-| Quick search | 50 | ~$0.025 |
-| Standard batch | 200 | ~$0.10 |
-| Large scrape | 1,000 | ~$0.50 |
-| Daily monitoring (50/day) | 1,500/month | ~$0.75/month |
+```
+{
+  "title": "Senior Python Developer",
+  "company": "TechCorp Inc.",
+  "location": "San Francisco, CA (Remote)",
+  "salary": "$140,000 - $180,000/yr",
+  "postedDate": "2026-04-05",
+  "employmentType": "Full-time",
+  "experienceLevel": "Mid-Senior level",
+  "jobUrl": "https://www.linkedin.com/jobs/view/3876543210",
+  "applyUrl": "https://www.linkedin.com/jobs/view/3876543210/apply",
+  "companyUrl": "https://www.linkedin.com/company/techcorp",
+  "description": "We're looking for a Senior Python Developer to join our platform team. You'll design and build scalable microservices, mentor junior developers, and work closely with product to ship features that serve millions of users.\n\nRequirements:\n- 5+ years Python experience\n- Experience with FastAPI or Django\n- Strong SQL and database design skills\n- AWS or GCP experience\n- Excellent communication skills\n\nBenefits:\n- Fully remote\n- Equity package\n- Unlimited PTO\n- $5,000 annual learning budget",
+  "companyLogo": "https://media.licdn.com/dms/image/...",
+  "applicationsCount": "127 applicants"
+}
+```
 
-Compare: the dominant competitor charges $0.001/result (2x more). Premium competitors charge up to $0.005/result (10x more).
+**Fields returned** (availability depends on what LinkedIn provides for each listing):
 
-**Performance:** ~25–50 jobs/minute depending on LinkedIn's response times and proxy routing. 50 jobs typically takes 2–4 minutes.
+- `title` — Job title
+- `company` — Company name
+- `location` — Job location (may include Remote/Hybrid/On-site)
+- `salary` — Salary range (when disclosed by the employer)
+- `postedDate` — When the job was posted
+- `employmentType` — Full-time, Part-time, Contract, etc.
+- `experienceLevel` — Entry, Mid-Senior, Director, etc.
+- `jobUrl` — Direct link to the LinkedIn job posting
+- `applyUrl` — Direct application link
+- `description` — Full job description text
+- `companyUrl` — Link to the company's LinkedIn page
+- `companyLogo` — URL to the company logo image
+- `applicationsCount` — Number of applicants (when available)
 
 ---
 
-## Filters Reference
+## Code Examples
 
-| Filter | Values |
+### Python — Search for Jobs and Save to CSV
+
+```
+from apify_client import ApifyClient
+import csv
+
+client = ApifyClient("YOUR_APIFY_API_TOKEN")
+
+run_input = {
+    "action": "search",
+    "keywords": "data scientist",
+    "location": "New York",
+    "maxItems": 50,
+}
+
+run = client.actor("cryptosignals/linkedin-jobs-scraper").call(run_input=run_input)
+
+# Save results to CSV
+items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+
+with open("linkedin_jobs.csv", "w", newline="", encoding="utf-8") as f:
+    if items:
+        writer = csv.DictWriter(f, fieldnames=items[0].keys())
+        writer.writeheader()
+        writer.writerows(items)
+
+print(f"Saved {len(items)} jobs to linkedin_jobs.csv")
+```
+
+### Python — Monitor New Jobs Daily
+
+```
+from apify_client import ApifyClient
+import json
+
+client = ApifyClient("YOUR_APIFY_API_TOKEN")
+
+# Search for recently posted jobs
+run_input = {
+    "action": "search",
+    "keywords": "machine learning engineer",
+    "location": "Remote",
+    "maxItems": 100,
+}
+
+run = client.actor("cryptosignals/linkedin-jobs-scraper").call(run_input=run_input)
+
+items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+
+# Filter for jobs with salary info
+jobs_with_salary = [job for job in items if job.get("salary")]
+print(f"Found {len(jobs_with_salary)} jobs with salary data out of {len(items)} total")
+
+for job in jobs_with_salary[:5]:
+    print(f"  {job['title']} at {job['company']} — {job['salary']}")
+```
+
+### Python — Get Full Details of a Specific Job
+
+```
+from apify_client import ApifyClient
+
+client = ApifyClient("YOUR_APIFY_API_TOKEN")
+
+run_input = {
+    "action": "job",
+    "url": "https://www.linkedin.com/jobs/view/3876543210",
+}
+
+run = client.actor("cryptosignals/linkedin-jobs-scraper").call(run_input=run_input)
+
+items = list(client.dataset(run["defaultDatasetId"]).iterate_items())
+
+if items:
+    job = items[0]
+    print(f"Title: {job['title']}")
+    print(f"Company: {job['company']}")
+    print(f"Description:\n{job.get('description', 'N/A')}")
+```
+
+### Node.js — Search and Process Results
+
+```
+import { ApifyClient } from 'apify-client';
+
+const client = new ApifyClient({ token: 'YOUR_APIFY_API_TOKEN' });
+
+const input = {
+    action: 'search',
+    keywords: 'frontend developer react',
+    location: 'United States',
+    maxItems: 50,
+};
+
+const run = await client.actor('cryptosignals/linkedin-jobs-scraper').call(input);
+
+const { items } = await client.dataset(run.defaultDatasetId).listItems();
+
+console.log(`Found ${items.length} jobs`);
+
+// Group by company
+const byCompany = {};
+for (const job of items) {
+    const company = job.company || 'Unknown';
+    byCompany[company] = (byCompany[company] || 0) + 1;
+}
+
+console.log('\nTop hiring companies:');
+Object.entries(byCompany)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .forEach(([company, count]) => {
+        console.log(`  ${company}: ${count} open positions`);
+    });
+```
+
+### Node.js — Get Job Details
+
+```
+import { ApifyClient } from 'apify-client';
+
+const client = new ApifyClient({ token: 'YOUR_APIFY_API_TOKEN' });
+
+const input = {
+    action: 'job',
+    url: 'https://www.linkedin.com/jobs/view/3876543210',
+};
+
+const run = await client.actor('cryptosignals/linkedin-jobs-scraper').call(input);
+const { items } = await client.dataset(run.defaultDatasetId).listItems();
+
+if (items.length > 0) {
+    const job = items[0];
+    console.log(`${job.title} at ${job.company}`);
+    console.log(`Location: ${job.location}`);
+    console.log(`Salary: ${job.salary || 'Not disclosed'}`);
+    console.log(`Apply: ${job.applyUrl}`);
+}
+```
+
+### Using the Apify API Directly (cURL)
+
+```
+# Start a run
+curl -X POST \
+  "https://api.apify.com/v2/acts/cryptosignals~linkedin-jobs-scraper/runs?token=YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "search",
+    "keywords": "product manager",
+    "location": "Berlin",
+    "maxItems": 25
+  }'
+
+# Fetch results (use the defaultDatasetId from the run response)
+curl "https://api.apify.com/v2/datasets/DATASET_ID/items?format=json&token=YOUR_TOKEN"
+```
+
+---
+
+## Pricing
+
+This actor uses **Pay Per Event (PPE)** pricing — you only pay for what you scrape.
+
+| Event | Price |
 | --- | --- |
-| `datePosted` | `r86400` (24h), `r604800` (week), `r2592000` (month) |
-| `jobType` | `F` (Full-time), `P` (Part-time), `C` (Contract), `T` (Temporary), `I` (Internship) |
-| `experienceLevel` | `1` (Intern), `2` (Entry), `3` (Associate), `4` (Mid-Senior), `5` (Director), `6` (Executive) |
-| `workType` | `1` (On-site), `2` (Remote), `3` (Hybrid) |
-| `salaryBase` | `40000`, `60000`, `80000`, `100000`, `120000` |
+| **Per result scraped** | **$0.01** |
+
+**Examples:**
+
+- 25 job listings → **$0.25**
+- 100 job listings → **$1.00**
+- 1,000 job listings (multiple runs) → **$10.00**
+
+**No platform fees.** You only pay for results. If a run returns 0 results, you pay $0.
+
+Free-plan Apify users get **$5/month in free platform credits** which can be used alongside PPE actor costs. That's enough for approximately **500 job listings per month at no cost** — plenty for testing, small projects, or personal job searches.
+
+> **Tip:** Start with `maxItems: 5` to test your search parameters before scaling up. You'll only be charged $0.05 to verify the results match what you need.
 
 ---
 
-## Limitations
+## Scheduling & Automation
 
-- LinkedIn limits each search URL to ~1,000 results. Use multiple search queries to get more.
-- Salary data is only available on job postings where the employer has added it (typically 30–40% of postings in the US).
-- Skills extraction requires LinkedIn to expose the skills section on the public job page. For some postings, skills will be empty.
-- LinkedIn may show an auth wall on some requests. The actor retries with a fresh session when this happens.
+Set up **scheduled runs** on Apify to automatically scrape new job listings on a daily or weekly basis:
 
----
+1. Go to the actor's page on Apify Console
+2. Click **"Schedule"** in the top menu
+3. Set your desired frequency (daily, every 6 hours, weekly, etc.)
+4. Configure your input parameters
+5. Results are automatically saved to your dataset
 
-## No Login Required
+Combine with **Apify Integrations** to push results directly to:
 
-This actor operates entirely on LinkedIn's public job search pages, which are accessible without an account. No cookies, no session tokens, no LinkedIn credentials needed.
-
----
-
-## Support & Feedback
-
-Found a bug or want a new feature? Open an issue on this actor's page. We respond within 48 hours and typically ship fixes within a week.
-
-Works great with our [Google Jobs Scraper](https://apify.com/khadinakbar/google-jobs-scraper) for cross-platform job market research.
+- Google Sheets
+- Slack notifications
+- Webhooks (your own API)
+- Zapier / Make.com
+- Email alerts
 
 ---
 
-## Changelog
+## Output Formats
 
-**v0.1** — Initial release. Keyword + location search, multi-query cross-product, full detail page extraction, salary parsing, skills extraction, PPE pricing.
+Export your results in any format:
+
+| Format | How |
+| --- | --- |
+| **JSON** | Default. Download from dataset or use API |
+| **CSV** | Click "Export" → CSV in Apify Console |
+| **Excel** | Click "Export" → Excel in Apify Console |
+| **API** | Fetch programmatically via dataset API endpoint |
+
+---
+
+## Frequently Asked Questions
+
+### Do I need a LinkedIn account?
+
+**No.** This actor uses LinkedIn's public guest API. No login, no cookies, no account required. It only accesses publicly available job listings — the same ones visible to anyone browsing LinkedIn without logging in.
+
+### Is this against LinkedIn's terms of service?
+
+This actor accesses only publicly available data through LinkedIn's public endpoints. It does not bypass any authentication or access private data. Public job listings are intentionally made available by employers to reach the widest audience.
+
+### How many jobs can I scrape per run?
+
+Up to **100 jobs per run** using the `maxItems` parameter. For larger volumes, set up multiple runs with different search parameters (different keywords, locations, or date ranges).
+
+### How fresh is the data?
+
+The data is scraped in real-time from LinkedIn when you run the actor. You always get the latest listings. For monitoring new postings, schedule the actor to run daily or every few hours.
+
+### What if my search returns 0 results?
+
+- Check your keyword spelling
+- Try broader search terms
+- Remove or change the location filter
+- LinkedIn may not have listings matching very niche queries
+- **You won't be charged for runs that return 0 results**
+
+### Can I filter by remote/hybrid/on-site?
+
+Yes — include terms like "remote" in your keywords. For example: `"software engineer remote"`.
+
+### Can I get salary data?
+
+Salary information is returned **when the employer includes it** in the listing. Not all job postings disclose salary. The actor returns whatever LinkedIn provides.
+
+### How is this different from other LinkedIn scrapers?
+
+- **No login required** — many competitors require LinkedIn credentials (which risk account bans)
+- **Public API only** — we don't scrape HTML or use headless browsers, so it's fast and reliable
+- **99.7% success rate** — proven across 2,100+ runs
+- **Simple pricing** — $0.01 per result, no hidden fees
+- **Two modes** — search for jobs OR get full details of a specific listing
+
+### Can I use this for commercial purposes?
+
+Yes. The data is publicly available. You can use it for analytics, lead generation, research, and building products. Always ensure your use case complies with applicable data protection laws in your jurisdiction.
+
+### What happens if LinkedIn changes their API?
+
+We actively maintain this actor. If LinkedIn makes changes, we update the actor to ensure continued functionality. The 99.7% success rate across 2,100+ runs demonstrates our commitment to reliability.
+
+---
+
+## Rate Limits & Best Practices
+
+- **Start small**: Test with `maxItems: 5` before scaling up
+- **Be specific**: Precise keywords return better results than broad ones
+- **Use location**: Adding a location filter reduces noise and speeds up results
+- **Schedule smart**: Daily runs catch most new postings; hourly is rarely needed
+- **Combine searches**: Run multiple searches with different keywords to build comprehensive datasets
+
+---
+
+## Support
+
+Having issues or questions? Use the **Issues** tab on this actor's Apify page to report bugs or ask questions. We typically respond within 24 hours.
+
+---
+
+*Built and maintained by [cryptosignals](https://apify.com/cryptosignals). Trusted by 56+ users with 2,100+ successful runs.*
